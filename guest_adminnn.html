@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Console</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @font-face { font-family: 'GmarketSansBold'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: 700; }
+
+        :root { --void-dark: #07070f; --gold: #C9A84C; --gold-bright: #E4C46A; }
+
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: var(--void-dark);
+            color: #e2e8f0;
+            overflow-x: hidden;
+        }
+
+        .font-gmarket { font-family: 'GmarketSansBold', sans-serif; }
+
+        .glow-title {
+            text-shadow:
+                0 0 16px rgba(201, 168, 76, 0.9),
+                0 0 40px rgba(228, 196, 106, 0.45),
+                0 0 80px rgba(201, 168, 76, 0.18);
+        }
+
+        .board-panel {
+            background: rgba(9, 7, 4, 0.72);
+            border: 1px solid rgba(201, 168, 76, 0.15);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(201, 168, 76, 0.07);
+            backdrop-filter: blur(12px);
+        }
+
+        .slot-cell {
+            background: rgba(5, 4, 2, 0.72);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s;
+        }
+        .slot-cell:hover {
+            border-color: rgba(201, 168, 76, 0.5);
+            background: rgba(201, 168, 76, 0.03);
+        }
+
+        .past-date { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+
+        .btn-glow {
+            background: linear-gradient(145deg, #4ade80, #16a34a);
+            color: #000;
+            box-shadow: 0 0 15px rgba(74, 222, 128, 0.4);
+            border: none;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 25px rgba(74, 222, 128, 0.7);
+            transform: translateY(-1px);
+        }
+
+        .draggable-tag { cursor: grab; transition: background-color 0.2s, opacity 0.2s; }
+        .draggable-tag:active { cursor: grabbing; }
+        .dragging {
+            opacity: 0.4;
+            background-color: rgba(201, 168, 76, 0.25) !important;
+            color: #ffffff !important;
+            border-color: rgba(201, 168, 76, 0.8) !important;
+        }
+
+        input[type="color"] { -webkit-appearance: none; border: none; width: 32px; height: 32px; border-radius: 50%; overflow: hidden; cursor: pointer; padding: 0; background: transparent; }
+        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+        input[type="color"]::-webkit-color-swatch { border: 2px solid rgba(255,255,255,0.3); border-radius: 50%; }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(7, 7, 15, 0.5); }
+        ::-webkit-scrollbar-thumb { background: rgba(201, 168, 76, 0.35); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(201, 168, 76, 0.6); }
+
+        textarea { resize: vertical; min-height: 80px; }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: rgba(201, 168, 76, 0.6) !important;
+            box-shadow: 0 0 0 1px rgba(201, 168, 76, 0.2);
+        }
+
+        .back-btn {
+            color: #9ca3af;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(0,0,0,0.4);
+            transition: color 0.2s, border-color 0.2s;
+        }
+        .back-btn:hover { color: #ffffff; border-color: rgba(201, 168, 76, 0.4); }
+
+        .section-toggle:hover { background: rgba(255,255,255,0.03); }
+
+        .info-box {
+            background: rgba(201, 168, 76, 0.06);
+            border: 1px solid rgba(201, 168, 76, 0.2);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+        }
+
+        .party-card {
+            background: rgba(10, 8, 4, 0.85);
+            border: 1px solid rgba(255,255,255,0.08);
+            cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .party-card:hover {
+            border-color: rgba(201, 168, 76, 0.5);
+            box-shadow: 0 0 12px rgba(201, 168, 76, 0.1);
+        }
+
+        /* 지난 주 템플릿 선택 버튼 */
+        .template-btn {
+            background: rgba(201, 168, 76, 0.08);
+            border: 1px solid rgba(201, 168, 76, 0.3);
+            color: #E4C46A;
+            transition: background 0.2s, border-color 0.2s;
+        }
+        .template-btn:hover {
+            background: rgba(201, 168, 76, 0.18);
+            border-color: rgba(201, 168, 76, 0.6);
+        }
+
+        .modal-bg { backdrop-filter: blur(4px); }
+    </style>
+</head>
+<body class="p-4 md:p-8 pb-32">
+
+    <!-- 로그인 오버레이 -->
+    <div id="loginOverlay" class="fixed inset-0 z-[999] flex items-center justify-center" style="background-color: #07070f;">
+        <div class="w-full max-w-sm mx-4" style="background: rgba(9,7,4,0.95); border: 1px solid rgba(201,168,76,0.25); border-radius: 1.25rem; padding: 2.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.8);">
+            <div class="flex flex-col items-center mb-8">
+                <h2 class="font-gmarket text-white text-2xl glow-title">Admin Console</h2>
+                <p class="text-gray-500 text-xs mt-2">관리자 전용 구역입니다</p>
+            </div>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1.5 font-bold">비밀번호</label>
+                    <input type="password" id="loginPwInput" placeholder="비밀번호 입력"
+                        class="w-full bg-black/80 p-3 rounded-xl border border-white/20 text-white text-sm outline-none"
+                        style="transition: border-color 0.2s;"
+                        onkeydown="if(event.key==='Enter') doLogin()">
+                </div>
+                <p id="loginError" class="text-red-400 text-xs font-bold hidden">비밀번호가 틀렸습니다.</p>
+                <button onclick="doLogin()" class="w-full btn-glow py-3.5 rounded-xl font-extrabold text-sm mt-2">입장하기</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="mainContent" class="hidden max-w-7xl mx-auto space-y-8">
+
+        <header class="flex justify-between items-center border-b border-white/10 pb-6">
+            <div class="flex items-center gap-4">
+                <h1 class="text-3xl md:text-4xl font-gmarket text-white glow-title tracking-wide">⚙️ Admin Console</h1>
+            </div>
+            <a href="index.html" class="back-btn text-xs font-bold px-4 py-2 rounded-lg transition">손님 페이지로 돌아가기</a>
+        </header>
+
+        <section class="board-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+                <h3 class="text-white font-gmarket mb-2 text-xl">파티 프리셋</h3>
+                <p class="text-[11px] text-gray-400 mb-4">태그를 드래그하여 순서를 변경할 수 있습니다.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="goalInput" placeholder="예: 6신화, 7신화" class="flex-1 bg-black/60 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                    <button onclick="addConfig('goals', 'goalInput')" class="bg-gray-700 text-white font-bold px-5 rounded-lg text-sm hover:bg-gray-600 transition">추가</button>
+                </div>
+                <div id="goalTags" class="flex flex-wrap gap-2 mt-3"></div>
+            </div>
+            <div>
+                <h3 class="text-white font-gmarket mb-2 text-xl">출발 시간 프리셋</h3>
+                <p class="text-[11px] text-gray-400 mb-4">태그를 드래그하여 순서를 변경할 수 있습니다.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="time" id="timeInput" class="flex-1 bg-black/60 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                    <button onclick="addConfig('times', 'timeInput')" class="bg-gray-700 text-white font-bold px-5 rounded-lg text-sm hover:bg-gray-600 transition">추가</button>
+                </div>
+                <div id="timeTags" class="flex flex-wrap gap-2 mt-3"></div>
+            </div>
+        </section>
+
+        <section class="board-panel p-6 rounded-2xl">
+            <h2 class="text-2xl font-gmarket text-white tracking-wide mb-6">일정 달력 (파티 생성)</h2>
+            <div class="hidden md:grid grid-cols-7 gap-3 mb-3 text-center font-gmarket text-xl">
+                <div class="text-white">목</div><div class="text-white">금</div><div class="text-blue-400">토</div>
+                <div class="text-red-400">일</div><div class="text-white">월</div><div class="text-white">화</div><div class="text-white">수</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-2 md:grid-cols-7 gap-3"></div>
+        </section>
+
+        <section class="board-panel p-6 md:p-8 rounded-2xl mt-8">
+            <h2 class="text-white font-gmarket text-2xl mb-6 border-b border-white/10 pb-4">📢 공통 공지사항 및 룰 관리 <span class="text-xs font-normal text-gray-400 ml-2 font-sans">게스트 페이지 노출용</span></h2>
+
+            <div class="bg-black/40 p-5 rounded-xl border border-white/10 mb-6">
+                <h3 class="text-white font-bold mb-3 text-lg">기본 파티 설명</h3>
+                <textarea id="notice_partyDesc" style="min-height: 120px;" placeholder="파티 진행 방식 및 기본 룰 입력" class="w-full bg-black/80 p-4 rounded-lg border border-white/20 text-sm text-white outline-none transition"></textarea>
+                <div class="flex justify-end gap-2 mt-3">
+                    <button onclick="clearNotice('partyDesc', 'notice_partyDesc')" class="bg-red-900/40 text-red-400 px-4 py-2 rounded-lg text-xs font-bold border border-red-500/50 hover:bg-red-600 hover:text-white transition">내용 지우기</button>
+                    <button onclick="saveNotice('partyDesc', 'notice_partyDesc')" class="btn-glow px-6 py-2 rounded-lg text-sm font-bold">수정(저장)</button>
+                </div>
+            </div>
+
+            <div id="dynamicNoticesContainer" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
+        </section>
+
+        <section class="board-panel rounded-2xl mt-8 overflow-hidden">
+            <button onclick="toggleGuestManager()" class="section-toggle w-full p-6 text-left flex justify-between items-center transition focus:outline-none">
+                <h2 class="text-white font-gmarket text-2xl">👥 손님 종류 및 우선순위 관리</h2>
+                <span id="guestManagerIcon" class="text-2xl text-[#C9A84C] transition-transform duration-300">▼</span>
+            </button>
+
+            <div id="guestManagerContent" class="hidden p-6 border-t border-white/10 bg-black/40">
+                <p class="text-sm text-gray-400 mb-6 font-bold info-box">
+                    💡 여기서 손님을 설정하면 모든 페이지(공지사항, 현황판, 파티생성 등)에 실시간으로 반영됩니다.<br>
+                    손님 이름을 수정(예: 띄어쓰기 추가)하거나 약칭, 색상을 변경한 후 꼭 [적용]을 눌러주세요.
+                </p>
+
+                <div class="flex flex-col md:flex-row gap-3 mb-6 bg-black/60 p-4 rounded-xl border border-white/10 items-end">
+                    <div class="flex-1">
+                        <label class="block text-xs text-gray-400 mb-1 font-bold">손님 이름 (예: 디나르손)</label>
+                        <input type="text" id="newGuestName" class="w-full bg-black/80 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                    </div>
+                    <div class="w-24">
+                        <label class="block text-xs text-gray-400 mb-1 font-bold">약칭 (예: 디)</label>
+                        <input type="text" id="newGuestShort" class="w-full bg-black/80 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                    </div>
+                    <div class="w-20 text-center">
+                        <label class="block text-xs text-gray-400 mb-1 font-bold">대표 색상</label>
+                        <input type="color" id="newGuestColor" value="#a855f7" class="w-full mt-1">
+                    </div>
+                    <button onclick="addGuestType()" class="btn-glow px-6 py-2.5 rounded-lg text-sm font-bold h-[42px] whitespace-nowrap">새 손님 추가</button>
+                </div>
+
+                <div id="guestTypesList" class="space-y-3"></div>
+            </div>
+        </section>
+
+    </div><!-- /mainContent -->
+
+    <!-- 파티 생성 모달 -->
+    <div id="createPartyModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 modal-bg" onclick="handleOutsideClick(event, 'createPartyModal')">
+        <div class="board-panel w-full max-w-md p-8 rounded-2xl relative" onclick="event.stopPropagation()">
+            <h2 id="cpDateText" class="text-2xl font-gmarket text-white mb-6 tracking-wide">파티 생성</h2>
+
+            <!-- 지난 주 템플릿 가져오기 -->
+            <div class="mb-5">
+                <button onclick="loadLastWeekTemplate()" class="template-btn w-full py-2.5 rounded-lg text-sm font-bold flex items-center justify-center gap-2">
+                    📋 지난 주 파티 템플릿 가져오기
+                </button>
+                <div id="templateOptions" class="hidden mt-2 flex flex-col gap-2"></div>
+            </div>
+
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-xs text-gray-300 mb-2 font-bold">목적 (선택 또는 직접입력)</label>
+                    <select id="cpGoalSelect" onchange="syncInput('cpGoalSelect', 'cpGoalCustom')" class="w-full bg-black/80 p-3 rounded-lg border border-white/20 mb-2 text-white"></select>
+                    <input type="text" id="cpGoalCustom" placeholder="직접 입력" class="w-full bg-black/80 p-3 rounded-lg border border-white/20 text-sm text-white">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-300 mb-2 font-bold">시간 (선택 또는 직접입력)</label>
+                    <select id="cpTimeSelect" onchange="syncInput('cpTimeSelect', 'cpTimeCustom')" class="w-full bg-black/80 p-3 rounded-lg border border-white/20 mb-2 text-white"></select>
+                    <input type="time" id="cpTimeCustom" class="w-full bg-black/80 p-3 rounded-lg border border-white/20 text-sm text-white">
+                </div>
+                <div class="flex gap-3 mt-8">
+                    <button onclick="submitCreateParty()" class="flex-1 btn-glow py-3.5 rounded-lg font-extrabold">생성하기</button>
+                    <button onclick="closeModal('createPartyModal')" class="flex-1 bg-gray-800 text-white py-3.5 rounded-lg font-bold hover:bg-gray-700 transition border border-gray-600">취소</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 파티 관리 모달 -->
+    <div id="managePartyModal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-2 md:p-4 modal-bg" onclick="handleOutsideClick(event, 'managePartyModal')">
+        <div class="board-panel w-full max-w-2xl p-6 md:p-8 rounded-2xl relative max-h-[95vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <div class="flex justify-between items-start mb-6 border-b border-white/10 pb-4">
+                <div>
+                    <h2 id="mpTitle" class="text-2xl font-gmarket text-white">파티 상세 관리</h2>
+                    <p id="mpSub" class="text-sm text-gray-300 mt-2">총 업비: <span id="mpTotalGold" class="text-yellow-400 font-extrabold text-xl">0</span> 만골</p>
+                </div>
+                <button onclick="deleteParty()" class="bg-red-900/60 text-red-400 px-4 py-2 rounded-lg font-bold hover:bg-red-600 hover:text-white transition border border-red-500/50">파티 폭파</button>
+            </div>
+
+            <input type="hidden" id="mpPartyId">
+
+            <div class="mb-6 p-5 bg-black/40 rounded-xl border border-white/10">
+                <h3 class="text-lg font-gmarket mb-4 text-white">⚙️ 파티 정보 수정</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1 font-bold">목적 수정 (예: 7신화)</label>
+                        <input type="text" id="mpGoalInput" class="w-full bg-black/80 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1 font-bold">출발 시간 수정</label>
+                        <div class="flex gap-2">
+                            <input type="time" id="mpTimeInput" class="flex-1 bg-black/80 p-2.5 rounded-lg border border-white/20 text-sm text-white">
+                            <button onclick="updatePartyInfo()" class="bg-purple-600/80 text-white font-bold px-4 rounded-lg text-sm hover:bg-purple-500 transition border border-purple-400 shadow-md">변경 저장</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-6 p-5 bg-black/40 rounded-xl border border-white/10">
+                <h3 class="text-lg font-gmarket mb-4 text-white">모집 상태 관리</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3" id="statusToggles"></div>
+            </div>
+
+            <div class="mb-6 p-5 bg-black/40 rounded-xl border border-white/10" id="guestInputSection">
+                <h3 class="text-lg font-gmarket mb-4 text-white">손님 정보 입력</h3>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
+                    <select id="gType" class="bg-black/80 p-2.5 text-sm text-white rounded-lg border border-white/20"></select>
+                    <input type="text" id="gName" placeholder="캐릭명" class="bg-black/80 p-2.5 text-sm text-white rounded-lg col-span-1 md:col-span-2 border border-white/20">
+                    <input type="number" id="gGold" placeholder="업비 (숫자만)" min="0" class="bg-black/80 p-2.5 text-sm text-white rounded-lg col-span-2 border border-white/20">
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                    <input type="text" id="gNote" placeholder="비고" class="bg-black/80 p-2.5 text-sm text-white rounded-lg border border-white/20">
+                    <input type="text" id="gMemo" placeholder="특이사항" class="bg-black/80 p-2.5 text-sm text-white rounded-lg border border-white/20">
+                </div>
+                <button id="guestSubmitBtn" onclick="addOrEditGuest()" class="w-full btn-glow py-3.5 rounded-lg text-sm font-extrabold text-black">등록하기</button>
+            </div>
+
+            <div>
+                <h3 class="text-lg font-gmarket mb-4 text-white">등록된 손님 목록</h3>
+                <div id="guestList" class="space-y-3"></div>
+            </div>
+
+            <button onclick="closeModal('managePartyModal')" class="w-full mt-8 bg-gray-800 text-white py-3.5 rounded-lg font-bold hover:bg-gray-700 border border-gray-600 transition">닫기</button>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, deleteDoc, onSnapshot, query, addDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3Nks9ldQJ6er_-E_R_AKXkgPty-wg-s0",
+            authDomain: "partyguest-6bbb1.firebaseapp.com",
+            projectId: "partyguest-6bbb1",
+            storageBucket: "partyguest-6bbb1.firebasestorage.app",
+            messagingSenderId: "877721179337",
+            appId: "1:877721179337:web:de8b20a63e739b942d6918"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // ── 인증 처리 (HTML 폼 기반, 세션 유지 포함) ──
+        const existingUser = await new Promise(resolve => onAuthStateChanged(auth, resolve));
+
+        if (existingUser) {
+            // 세션 있음 → 로그인 오버레이 숨기고 바로 진입
+            document.getElementById('loginOverlay').style.display = 'none';
+            document.getElementById('mainContent').classList.remove('hidden');
+        } else {
+            // 세션 없음 → 로그인 폼 대기
+            document.getElementById('loginOverlay').style.display = 'flex';
+        }
+
+        window.doLogin = async () => {
+            const pw = document.getElementById('loginPwInput').value;
+            const errEl = document.getElementById('loginError');
+            errEl.classList.add('hidden');
+            if (!pw) return;
+            try {
+                await signInWithEmailAndPassword(auth, "guestparty@guestparty.com", pw);
+                document.getElementById('loginOverlay').style.display = 'none';
+                document.getElementById('mainContent').classList.remove('hidden');
+            } catch(e) {
+                errEl.classList.remove('hidden');
+                document.getElementById('loginPwInput').value = '';
+                document.getElementById('loginPwInput').focus();
+            }
+        };
+
+        let globalConfig = { goals: [], times: [], guestTypes: [] };
+        let noticesData = {};
+        let partiesData = [];
+        let currentManageDate = "";
+        let editingGuestIndex = -1;
+
+        const defaultGuestTypes = [
+            { name: "깡손님", short: "깡", color: "#fb923c" },
+            { name: "업적손님", short: "업", color: "#c084fc" },
+            { name: "탈것손님", short: "탈", color: "#e5e7eb" },
+            { name: "주사위손님", short: "주", color: "#4ade80" }
+        ];
+
+        function toLocalISOString(date) {
+            let pad = function(num) { return (num < 10 ? '0' : '') + num; };
+            return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+        }
+
+        function getBaseThursday() {
+            let d = new Date(); d.setHours(0,0,0,0);
+            let day = d.getDay();
+            let diff = (day >= 4) ? (day - 4) : (day + 3);
+            d.setDate(d.getDate() - diff);
+            return d;
+        }
+
+        const configRef = doc(db, "admin", "globalConfig");
+        onSnapshot(configRef, (snap) => {
+            if(snap.exists()) {
+                globalConfig = snap.data();
+                if(!globalConfig.goals) globalConfig.goals = [];
+                if(!globalConfig.times) globalConfig.times = [];
+                if(!globalConfig.guestTypes || globalConfig.guestTypes.length === 0) {
+                    globalConfig.guestTypes = defaultGuestTypes;
+                    updateDoc(configRef, { guestTypes: defaultGuestTypes });
+                }
+                renderConfigUI();
+                renderGuestTypesManager();
+                renderNoticesUI();
+            } else {
+                setDoc(configRef, { goals: ["6신화", "7신화", "올신화"], times: ["14:00", "20:00"], guestTypes: defaultGuestTypes });
+            }
+        });
+
+        const noticesRef = doc(db, "admin", "notices");
+        onSnapshot(noticesRef, (snap) => {
+            if(snap.exists()) {
+                noticesData = snap.data();
+                if(document.getElementById('notice_partyDesc')) document.getElementById('notice_partyDesc').value = noticesData.partyDesc || "";
+                renderNoticesUI();
+            } else {
+                setDoc(noticesRef, { partyDesc: "" });
+            }
+        });
+
+        const partiesQuery = query(collection(db, "parties"));
+        onSnapshot(partiesQuery, (snapshot) => {
+            partiesData = [];
+            snapshot.forEach(doc => { partiesData.push({ id: doc.id, ...doc.data() }); });
+            renderCalendar();
+
+            const openPartyId = document.getElementById('mpPartyId').value;
+            if(openPartyId && !document.getElementById('managePartyModal').classList.contains('hidden')) {
+                const updatedParty = partiesData.find(p => p.id === openPartyId);
+                if(updatedParty) renderManageModalDetails(updatedParty);
+                else closeModal('managePartyModal');
+            }
+        });
+
+        function renderConfigUI() {
+            setupDragAndDropStr('goalTags', globalConfig.goals, 'goals');
+            setupDragAndDropStr('timeTags', globalConfig.times, 'times');
+            document.getElementById('cpGoalSelect').innerHTML = `<option value="">--선택--</option>` + globalConfig.goals.map(g => `<option value="${g}">${g}</option>`).join('');
+            document.getElementById('cpTimeSelect').innerHTML = `<option value="">--선택--</option>` + globalConfig.times.map(t => `<option value="${t}">${t}</option>`).join('');
+            document.getElementById('gType').innerHTML = globalConfig.guestTypes.map(t => `<option value="${t.name}">${t.name}</option>`).join('');
+        }
+
+        function renderNoticesUI() {
+            const container = document.getElementById('dynamicNoticesContainer');
+            if(!container) return;
+            container.innerHTML = '';
+            globalConfig.guestTypes.forEach(t => {
+                const val = noticesData[t.name] || "";
+                container.innerHTML += `
+                    <div class="bg-black/40 p-5 rounded-xl border border-white/10 relative">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-3 h-3 rounded-full shadow-lg" style="background-color: ${t.color}"></div>
+                            <h3 class="text-white font-bold text-lg">${t.name} <span class="text-xs text-gray-400 font-normal ml-1">(${t.short})</span></h3>
+                        </div>
+                        <textarea id="notice_${t.name}" placeholder="${t.name} 자격 및 룰 입력" class="w-full bg-black/80 p-4 rounded-lg border border-white/20 text-sm text-white outline-none transition" style="border-left: 3px solid ${t.color}">${val}</textarea>
+                        <div class="flex justify-end gap-2 mt-3">
+                            <button onclick="clearNotice('${t.name}', 'notice_${t.name}')" class="bg-red-900/40 text-red-400 px-4 py-2 rounded-lg text-xs font-bold border border-red-500/50 hover:bg-red-600 hover:text-white transition">지우기</button>
+                            <button onclick="saveNotice('${t.name}', 'notice_${t.name}')" class="bg-gray-700 text-white px-5 py-2 rounded-lg text-xs font-bold hover:bg-gray-600 transition">수정(저장)</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderGuestTypesManager() {
+            const list = document.getElementById('guestTypesList');
+            list.innerHTML = '';
+            globalConfig.guestTypes.forEach((t, index) => {
+                const item = document.createElement('div');
+                item.className = 'draggable-tag bg-black/60 p-3 rounded-xl border border-white/10 flex flex-col md:flex-row items-center gap-3';
+                item.draggable = true;
+                item.dataset.index = index;
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 w-full md:w-auto md:flex-1">
+                        <span class="text-gray-500 cursor-grab px-2 text-lg hover:text-white">☰</span>
+                        <div class="flex-1">
+                            <input type="text" id="editName_${index}" value="${t.name}" class="w-full bg-black/80 p-1.5 rounded-lg border border-white/20 text-sm text-white font-bold outline-none">
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-gray-400">약칭:</span>
+                            <input type="text" id="editShort_${index}" value="${t.short}" class="w-12 bg-black/80 text-center p-1.5 rounded border border-white/20 text-sm text-white outline-none">
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <input type="color" id="editColor_${index}" value="${t.color}">
+                        </div>
+                        <button onclick="updateGuestType(${index})" class="bg-blue-600/30 text-blue-400 border border-blue-500/50 hover:bg-blue-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">적용</button>
+                        <button onclick="deleteGuestType(${index}, '${t.name}')" class="bg-red-900/40 text-red-400 border border-red-500/50 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg text-xs font-bold transition">삭제</button>
+                    </div>
+                `;
+                item.addEventListener('dragstart', (e) => { item.classList.add('dragging'); e.dataTransfer.setData('text/plain', index); });
+                item.addEventListener('dragend', () => item.classList.remove('dragging'));
+                list.appendChild(item);
+            });
+
+            list.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const draggingItem = list.querySelector('.dragging');
+                if(!draggingItem) return;
+                const siblings = [...list.querySelectorAll('.draggable-tag:not(.dragging)')];
+                const nextSibling = siblings.find(sibling => e.clientY <= sibling.getBoundingClientRect().top + sibling.getBoundingClientRect().height / 2);
+                list.insertBefore(draggingItem, nextSibling);
+            });
+
+            list.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const tags = [...list.querySelectorAll('.draggable-tag')];
+                const newOrder = tags.map(tag => globalConfig.guestTypes[tag.dataset.index]);
+                await updateDoc(configRef, { guestTypes: newOrder });
+            });
+        }
+
+        window.toggleGuestManager = () => {
+            const content = document.getElementById('guestManagerContent');
+            const icon = document.getElementById('guestManagerIcon');
+            content.classList.toggle('hidden');
+            icon.style.transform = content.classList.contains('hidden') ? 'rotate(0deg)' : 'rotate(180deg)';
+        };
+
+        window.addGuestType = async () => {
+            const name = document.getElementById('newGuestName').value.trim();
+            const short = document.getElementById('newGuestShort').value.trim();
+            const color = document.getElementById('newGuestColor').value;
+            if(!name || !short) return alert("이름과 약칭을 모두 입력해주세요.");
+            if(globalConfig.guestTypes.find(t => t.name === name)) return alert("이미 존재하는 손님 이름입니다.");
+            const newArray = [...globalConfig.guestTypes, { name, short, color }];
+            await updateDoc(configRef, { guestTypes: newArray });
+            document.getElementById('newGuestName').value = '';
+            document.getElementById('newGuestShort').value = '';
+        };
+
+        window.updateGuestType = async (index) => {
+            const name = document.getElementById(`editName_${index}`).value.trim();
+            const short = document.getElementById(`editShort_${index}`).value.trim();
+            const color = document.getElementById(`editColor_${index}`).value;
+            if(!name || !short) return alert("이름과 약칭을 모두 입력해주세요.");
+            let updatedArray = [...globalConfig.guestTypes];
+            updatedArray[index].name = name;
+            updatedArray[index].short = short;
+            updatedArray[index].color = color;
+            await updateDoc(configRef, { guestTypes: updatedArray });
+            alert("변경사항이 성공적으로 적용되었습니다.");
+        };
+
+        window.deleteGuestType = async (index, name) => {
+            if(!confirm(`'${name}'을(를) 정말 삭제하시겠습니까?\n(기존 파티 기록의 이름은 보존됩니다.)`)) return;
+            let updatedArray = globalConfig.guestTypes.filter((_, i) => i !== index);
+            await updateDoc(configRef, { guestTypes: updatedArray });
+        };
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const today = new Date(); today.setHours(0,0,0,0);
+            let startDate = getBaseThursday();
+            const days = ["일","월","화","수","목","금","토"];
+
+            // ── 3주 (21일) ──
+            for(let i = 0; i < 21; i++) {
+                let d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                let dateStr = toLocalISOString(d);
+                let isPast = d < today;
+                let todaysParties = partiesData.filter(p => p.date === dateStr).sort((a,b) => a.time.localeCompare(b.time));
+                let canAddMore = todaysParties.length < 2;
+
+                let cell = document.createElement('div');
+                cell.className = `slot-cell p-3 rounded-2xl relative ${isPast ? 'past-date' : ''}`;
+                let dayColor = d.getDay() === 0 ? 'text-red-400' : d.getDay() === 6 ? 'text-blue-400' : 'text-white';
+
+                let html = `<div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+                                <span class="font-gmarket text-lg ${dayColor}">
+                                    <span class="md:hidden">${days[d.getDay()]} </span>${dateStr.slice(5)}
+                                </span>
+                                ${canAddMore ? `<button onclick="openCreateModal('${dateStr}')" class="text-white bg-white/10 hover:bg-[#C9A84C]/80 hover:text-black border border-white/20 rounded px-2.5 font-bold transition">+</button>` : ''}
+                            </div><div class="flex flex-col gap-2 flex-1">`;
+
+                todaysParties.forEach(p => {
+                    let summaryMap = {};
+                    (p.guests || []).forEach(g => { summaryMap[g.type] = (summaryMap[g.type] || 0) + 1; });
+                    let summaryHtml = '';
+                    for (const [gType, count] of Object.entries(summaryMap)) {
+                        const tInfo = globalConfig.guestTypes.find(t => t.name === gType) || { short: gType.charAt(0), color: "#9ca3af" };
+                        summaryHtml += `<span style="color: ${tInfo.color}; border-color: ${tInfo.color}" class="border px-1.5 rounded text-[10px] bg-black/40">${count}${tInfo.short}</span> `;
+                    }
+                    if(summaryHtml === '') summaryHtml = `<span class="border border-gray-600 text-gray-400 px-1.5 rounded text-[10px] bg-black/40">손님 없음</span>`;
+
+                    html += `
+                        <div onclick="openManageModal('${p.id}')" class="party-card p-3 rounded-xl">
+                            <div class="text-white font-gmarket text-base mb-1">${p.time} <span class="text-xs text-[#C9A84C] font-sans font-bold ml-1">${p.goal}</span></div>
+                            <div class="flex flex-wrap gap-1 mt-2">${summaryHtml}</div>
+                        </div>`;
+                });
+
+                html += `</div>`;
+                cell.innerHTML = html;
+                grid.appendChild(cell);
+            }
+        }
+
+        // ── 지난 주 파티 템플릿 가져오기 ──
+        window.loadLastWeekTemplate = () => {
+            const currentDate = new Date(currentManageDate);
+            const lastWeekDate = new Date(currentDate);
+            lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+            const lastWeekStr = toLocalISOString(lastWeekDate);
+
+            const lastWeekParties = partiesData.filter(p => p.date === lastWeekStr);
+            const optionsDiv = document.getElementById('templateOptions');
+
+            if(lastWeekParties.length === 0) {
+                alert("지난 주 해당 날짜에 파티가 없어요.");
+                return;
+            }
+
+            if(lastWeekParties.length === 1) {
+                // 바로 자동 채우기
+                document.getElementById('cpGoalCustom').value = lastWeekParties[0].goal;
+                document.getElementById('cpTimeCustom').value = lastWeekParties[0].time;
+                optionsDiv.classList.add('hidden');
+                return;
+            }
+
+            // 파티가 2개 → 선택지 표시
+            optionsDiv.innerHTML = '';
+            lastWeekParties.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'template-btn w-full py-2 px-3 rounded-lg text-sm font-bold text-left';
+                btn.innerHTML = `${p.time} / ${p.goal}`;
+                btn.onclick = () => {
+                    document.getElementById('cpGoalCustom').value = p.goal;
+                    document.getElementById('cpTimeCustom').value = p.time;
+                    optionsDiv.classList.add('hidden');
+                };
+                optionsDiv.appendChild(btn);
+            });
+            optionsDiv.classList.remove('hidden');
+        };
+
+        window.submitCreateParty = async () => {
+            const goal = document.getElementById('cpGoalCustom').value.trim();
+            const time = document.getElementById('cpTimeCustom').value.trim();
+            if(!goal || !time) return alert("목적과 시간을 입력해주세요.");
+
+            // ── 파티 생성 직전 Firebase에서 최신 손님 유형 직접 읽기 ──
+            // (onSnapshot 타이밍에 의존하지 않음)
+            const freshSnap = await getDoc(configRef);
+            const freshGuestTypes = (freshSnap.exists() && freshSnap.data().guestTypes) ? freshSnap.data().guestTypes : [];
+
+            // ── 파티 목적에 따른 초기 모집 상태 자동 설정 ──
+            // "올신"으로 시작 → 탈것 포함 전부 활성화
+            // 그 외 → 이름에 "탈"이 들어간 손님 제외하고 나머지만 활성화
+            const isOlsin = goal.startsWith("올신");
+            let initialStatuses = {};
+            freshGuestTypes.forEach(t => {
+                if (isOlsin) {
+                    initialStatuses[t.name] = true;
+                } else {
+                    initialStatuses[t.name] = !t.name.includes("탈");
+                }
+            });
+
+            await addDoc(collection(db, "parties"), {
+                date: currentManageDate, time: time, goal: goal, guests: [], statuses: initialStatuses
+            });
+            closeModal('createPartyModal');
+        };
+
+        function renderManageModalDetails(p) {
+            document.getElementById('mpTitle').innerText = `${p.date.slice(5)} [${p.time}] ${p.goal}`;
+            let totalGold = (p.guests || []).reduce((sum, g) => sum + Number(g.gold || 0), 0);
+            document.getElementById('mpTotalGold').innerText = totalGold.toLocaleString();
+            document.getElementById('mpGoalInput').value = p.goal || "";
+            document.getElementById('mpTimeInput').value = p.time || "";
+
+            let statusHtml = '';
+            globalConfig.guestTypes.forEach(t => {
+                let isOpen = p.statuses && p.statuses[t.name] === true;
+                let btnClass = isOpen ? "bg-green-500/20 text-green-400 border-green-500/50 hover:bg-green-500/40" : "bg-red-900/40 text-red-400 border-red-500/50 hover:bg-red-900/60";
+                let text = isOpen ? "지원가능" : "마감";
+                statusHtml += `<button onclick="toggleStatus('${p.id}', '${t.name}', ${!isOpen})" class="${btnClass} border py-2 rounded-lg text-sm font-bold transition shadow-md">${t.name}: ${text}</button>`;
+            });
+            document.getElementById('statusToggles').innerHTML = statusHtml;
+
+            let guestHtml = '';
+            if(!p.guests || p.guests.length === 0) {
+                guestHtml = '<p class="text-sm text-gray-500 text-center py-4 font-bold">등록된 손님이 없습니다.</p>';
+            } else {
+                p.guests.forEach((g, index) => {
+                    const tInfo = globalConfig.guestTypes.find(t => t.name === g.type) || { color: "#9ca3af" };
+                    guestHtml += `
+                    <div class="bg-black/40 p-4 rounded-xl flex justify-between items-center border border-white/10 relative overflow-hidden">
+                        <div class="absolute left-0 top-0 bottom-0 w-1" style="background-color: ${tInfo.color}"></div>
+                        <div class="pl-3">
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="text-[10px] px-2 py-0.5 rounded font-extrabold text-black" style="background-color: ${tInfo.color}">${g.type}</span>
+                                <span class="font-extrabold text-white text-lg">${g.name}</span>
+                                <span class="text-sm text-yellow-400 font-extrabold ml-2">${Number(g.gold).toLocaleString()}만골</span>
+                            </div>
+                            <div class="text-xs text-gray-400 font-bold mt-2">비고: ${g.note || '-'} | 특이사항: ${g.memo || '-'}</div>
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="editGuest('${p.id}', ${index})" class="text-blue-400 bg-blue-900/30 border border-blue-500/50 hover:bg-blue-600 hover:text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">수정</button>
+                            <button onclick="removeGuest('${p.id}', ${index})" class="text-red-400 bg-red-900/30 border border-red-500/50 hover:bg-red-600 hover:text-white px-4 py-1.5 rounded-lg text-xs font-bold transition">삭제</button>
+                        </div>
+                    </div>`;
+                });
+            }
+            document.getElementById('guestList').innerHTML = guestHtml;
+        }
+
+        window.updatePartyInfo = async () => {
+            const partyId = document.getElementById('mpPartyId').value;
+            const newGoal = document.getElementById('mpGoalInput').value.trim();
+            const newTime = document.getElementById('mpTimeInput').value.trim();
+            if(!newGoal || !newTime) return alert("목적과 시간을 모두 입력해주세요.");
+            if(!confirm("파티 정보를 실시간으로 수정하시겠습니까?")) return;
+            await updateDoc(doc(db, "parties", partyId), { goal: newGoal, time: newTime });
+            alert("파티 정보가 성공적으로 수정되었습니다.");
+        };
+
+        window.saveNotice = async (field, inputId) => {
+            if(!confirm("진짜로 수정하시겠습니까?")) return;
+            const val = document.getElementById(inputId).value;
+            await updateDoc(noticesRef, { [field]: val });
+            alert("저장되었습니다.");
+        };
+
+        window.clearNotice = async (field, inputId) => {
+            if(!confirm("내용을 삭제하시겠습니까?")) return;
+            await updateDoc(noticesRef, { [field]: "" });
+            document.getElementById(inputId).value = "";
+        };
+
+        window.addConfig = async (type, inputId) => {
+            const val = document.getElementById(inputId).value.trim();
+            if(!val) return;
+            if(globalConfig[type].includes(val)) return alert("이미 존재합니다.");
+            await updateDoc(configRef, { [type]: [...globalConfig[type], val] });
+            document.getElementById(inputId).value = '';
+        };
+
+        window.removeConfig = async (type, val) => {
+            await updateDoc(configRef, { [type]: globalConfig[type].filter(i => i !== val) });
+        };
+
+        function setupDragAndDropStr(containerId, dataArray, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            dataArray.forEach((item, index) => {
+                const tag = document.createElement('span');
+                tag.className = 'bg-black/60 border border-white/20 text-white text-xs px-3 py-1.5 rounded-lg flex items-center gap-2 draggable-tag font-bold';
+                tag.draggable = true; tag.dataset.index = index;
+                tag.innerHTML = `<span>☰</span> <span>${item}</span> <button onclick="event.stopPropagation(); removeConfig('${type}', '${item}')" class="text-red-400 hover:text-red-200 ml-1">×</button>`;
+                tag.addEventListener('dragstart', (e) => { tag.classList.add('dragging'); e.dataTransfer.setData('text/plain', index); });
+                tag.addEventListener('dragend', () => tag.classList.remove('dragging'));
+                container.appendChild(tag);
+            });
+            container.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const draggingItem = container.querySelector('.dragging');
+                if(!draggingItem) return;
+                const siblings = [...container.querySelectorAll('.draggable-tag:not(.dragging)')];
+                const nextSibling = siblings.find(sibling => e.clientX <= sibling.getBoundingClientRect().left + sibling.getBoundingClientRect().width / 2);
+                container.insertBefore(draggingItem, nextSibling);
+            });
+            container.addEventListener('drop', async (e) => {
+                e.preventDefault();
+                const tags = [...container.querySelectorAll('.draggable-tag')];
+                await updateDoc(configRef, { [type]: tags.map(tag => dataArray[tag.dataset.index]) });
+            });
+        }
+
+        window.syncInput = (selectId, inputId) => {
+            const selectEl = document.getElementById(selectId);
+            const val = selectEl.value;
+            if(val) {
+                document.getElementById(inputId).value = val;
+                selectEl.value = "";
+            }
+        };
+
+        window.closeModal = (id) => { document.getElementById(id).classList.add('hidden'); };
+        window.handleOutsideClick = (e, modalId) => { if (e.target.classList.contains('modal-bg')) closeModal(modalId); };
+
+        window.openCreateModal = (dateStr) => {
+            currentManageDate = dateStr;
+            document.getElementById('cpDateText').innerText = `${dateStr.slice(5)} 파티 생성`;
+            document.getElementById('cpGoalCustom').value = '';
+            document.getElementById('cpTimeCustom').value = '';
+            document.getElementById('cpGoalSelect').value = '';
+            document.getElementById('cpTimeSelect').value = '';
+            document.getElementById('templateOptions').classList.add('hidden');
+            document.getElementById('createPartyModal').classList.remove('hidden');
+        };
+
+        window.openManageModal = (partyId) => {
+            const p = partiesData.find(x => x.id === partyId);
+            if(!p) return;
+            document.getElementById('mpPartyId').value = partyId;
+            resetGuestForm();
+            document.getElementById('managePartyModal').classList.remove('hidden');
+            renderManageModalDetails(p);
+        };
+
+        window.toggleStatus = async (partyId, typeName, newState) => {
+            const p = partiesData.find(x => x.id === partyId);
+            const updatedStatuses = { ...p.statuses, [typeName]: newState };
+            await updateDoc(doc(db, "parties", partyId), { statuses: updatedStatuses });
+        };
+
+        function resetGuestForm() {
+            document.getElementById('gName').value = '';
+            document.getElementById('gGold').value = '';
+            document.getElementById('gNote').value = '';
+            document.getElementById('gMemo').value = '';
+            const btn = document.getElementById('guestSubmitBtn');
+            btn.innerText = '등록하기';
+            btn.className = 'w-full btn-glow py-3.5 rounded-lg text-sm font-extrabold text-black';
+            editingGuestIndex = -1;
+        }
+
+        window.addOrEditGuest = async () => {
+            const partyId = document.getElementById('mpPartyId').value;
+            const type = document.getElementById('gType').value;
+            const name = document.getElementById('gName').value.trim();
+            // ── 업비 음수 차단 ──
+            const gold = Math.max(0, Number(document.getElementById('gGold').value.trim()) || 0);
+            const note = document.getElementById('gNote').value.trim();
+            const memo = document.getElementById('gMemo').value.trim();
+
+            if(!name) return alert("캐릭명을 입력하세요.");
+            const p = partiesData.find(x => x.id === partyId);
+            let newGuests = [...(p.guests || [])];
+            const guestData = { type, name, gold: gold, note, memo };
+
+            if (editingGuestIndex > -1) newGuests[editingGuestIndex] = guestData;
+            else newGuests.push(guestData);
+
+            await updateDoc(doc(db, "parties", partyId), { guests: newGuests });
+            resetGuestForm();
+        };
+
+        window.editGuest = (partyId, index) => {
+            const p = partiesData.find(x => x.id === partyId);
+            const guest = p.guests[index];
+            document.getElementById('gType').value = guest.type;
+            document.getElementById('gName').value = guest.name;
+            document.getElementById('gGold').value = guest.gold;
+            document.getElementById('gNote').value = guest.note || '';
+            document.getElementById('gMemo').value = guest.memo || '';
+
+            const btn = document.getElementById('guestSubmitBtn');
+            btn.innerText = '수정 완료';
+            btn.className = 'w-full bg-blue-600 py-3.5 rounded-lg text-sm font-extrabold text-white hover:bg-blue-500 border border-blue-400 shadow-[0_0_15px_rgba(37,99,235,0.6)]';
+            editingGuestIndex = index;
+
+            // ── 손님 정보 입력 폼으로 자동 스크롤 ──
+            document.getElementById('guestInputSection').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+
+        window.removeGuest = async (partyId, index) => {
+            if(!confirm("이 손님을 삭제하시겠습니까?")) return;
+            const p = partiesData.find(x => x.id === partyId);
+            const newGuests = p.guests.filter((_, i) => i !== index);
+            await updateDoc(doc(db, "parties", partyId), { guests: newGuests });
+            if(editingGuestIndex === index) resetGuestForm();
+            else if (editingGuestIndex > index) editingGuestIndex--;
+        };
+
+        // ── 파티 폭파 — 2단계 확인 ──
+        window.deleteParty = async () => {
+            const partyId = document.getElementById('mpPartyId').value;
+            const partyTitle = document.getElementById('mpTitle').innerText;
+            if(!confirm(`파티를 삭제하시겠습니까?\n[ ${partyTitle} ]`)) return;
+            if(!confirm("⚠️ 마지막 확인입니다.\n삭제하면 손님 데이터까지 모두 사라지며 되돌릴 수 없습니다.\n정말 삭제하시겠습니까?")) return;
+            await deleteDoc(doc(db, "parties", partyId));
+            closeModal('managePartyModal');
+        };
+    </script>
+
+</body>
+</html>

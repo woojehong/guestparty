@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>파티 손님 신청</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        @font-face { font-family: 'GmarketSansBold'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: 700; }
+
+        :root {
+            --void-dark: #07070f;
+            --gold: #C9A84C;
+            --gold-bright: #E4C46A;
+        }
+
+        body {
+            background-color: var(--void-dark);
+            color: #ffffff;
+            font-family: 'Pretendard', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .font-gmarket { font-family: 'GmarketSansBold', sans-serif; }
+
+        /* ── Sticky 상단 바 ── */
+        .sticky-bar {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(7, 7, 15, 0.97);
+            border-bottom: 1px solid rgba(201, 168, 76, 0.2);
+            backdrop-filter: blur(12px);
+        }
+        .sticky-inner {
+            max-width: 90rem;
+            margin: 0 auto;
+            padding: 22px 48px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            text-align: center;
+        }
+        .sticky-text {
+            font-size: 20px;
+            color: #ffffff;
+            font-weight: 800;
+            line-height: 1.5;
+            letter-spacing: -0.01em;
+        }
+        .sticky-kakao-btn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background-color: #FEE500;
+            color: #000;
+            font-weight: 900;
+            font-size: 17px;
+            padding: 14px 32px;
+            border-radius: 14px;
+            white-space: nowrap;
+            transition: background-color 0.2s, transform 0.2s, box-shadow 0.2s;
+            flex-shrink: 0;
+            box-shadow: 0 4px 16px rgba(254, 229, 0, 0.25);
+        }
+        .sticky-kakao-btn:hover {
+            background-color: #e6cf00;
+            transform: scale(1.04);
+            box-shadow: 0 6px 24px rgba(254, 229, 0, 0.4);
+        }
+
+        /* 모바일: sticky 바 컴팩트하게 */
+        @media (max-width: 768px) {
+            .sticky-inner {
+                padding: 8px 16px;
+                gap: 7px;
+            }
+            .sticky-text {
+                font-size: 11px;
+                font-weight: 700;
+                line-height: 1.4;
+                color: #ffffff;
+            }
+            .sticky-kakao-btn {
+                font-size: 12px;
+                padding: 8px 14px;
+                border-radius: 10px;
+                gap: 6px;
+                box-shadow: none;
+            }
+            .sticky-kakao-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+
+        /* 공지/룰 패널 */
+        .glass {
+            background: rgba(10, 8, 4, 0.82);
+            border: 1px solid rgba(201, 168, 76, 0.18);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201, 168, 76, 0.07);
+            backdrop-filter: blur(10px);
+        }
+
+        /* 달력 셀 */
+        .slot-cell {
+            background: rgba(9, 7, 4, 0.75);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .past-date { opacity: 0.3; pointer-events: none; filter: grayscale(100%); }
+
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(7, 7, 15, 0.5); }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(201, 168, 76, 0.35);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(201, 168, 76, 0.6);
+        }
+
+        .whitespace-pre-wrap { white-space: pre-wrap; }
+
+        /* 파티 카드 */
+        .party-card-active {
+            background: rgba(12, 10, 5, 0.92);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            cursor: pointer;
+            transition: border-color 0.25s, background 0.25s, box-shadow 0.25s;
+        }
+        .party-card-active:hover {
+            border-color: rgba(201, 168, 76, 0.5);
+            background: rgba(201, 168, 76, 0.04);
+            box-shadow: 0 2px 16px rgba(201, 168, 76, 0.08);
+        }
+
+        /* 공지 섹션 박스 */
+        .notice-box {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
+        /* 플로팅 카카오 버튼 */
+        .floating-kakao {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            z-index: 9999;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .floating-kakao:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(254, 229, 0, 0.4);
+        }
+        @media (max-width: 768px) {
+            .floating-kakao { bottom: 20px; right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ── Sticky 상단 바 ── -->
+    <div class="sticky-bar">
+        <div class="sticky-inner">
+            <p class="sticky-text">참여를 원하시는 일정에 카카오톡으로 문의 주세요. 업비 안내는 개별 문의를 통해 드립니다.</p>
+            <a href="https://open.kakao.com/o/sRTvKpih" target="_blank" class="sticky-kakao-btn">
+                <svg viewBox="0 0 32 32" style="width:18px;height:18px;" fill="currentColor">
+                    <path d="M16 4c-8.837 0-16 5.619-16 12.536 0 4.469 2.822 8.397 7.086 10.669l-1.846 6.786c-.144.524.407.925.864.63l7.994-5.234c.621.096 1.256.149 1.902.149 8.837 0 16-5.619 16-12.536S24.837 4 16 4z"/>
+                </svg>
+                카카오톡 문의
+            </a>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 md:px-8 pt-8 pb-24 space-y-8">
+
+        <section>
+            <div class="hidden md:grid grid-cols-7 gap-3 mb-4 text-center font-extrabold text-3xl">
+                <div class="text-white">목</div><div class="text-white">금</div><div class="text-blue-400">토</div>
+                <div class="text-red-400">일</div><div class="text-white">월</div><div class="text-white">화</div><div class="text-white">수</div>
+            </div>
+            <div id="calendarGrid" class="grid grid-cols-1 md:grid-cols-7 gap-3"></div>
+        </section>
+
+        <section class="glass p-6 md:p-8 rounded-2xl mb-8">
+            <h2 class="text-white font-extrabold text-2xl mb-6 border-b border-white/10 pb-3 flex items-center gap-2">
+                <span>📢</span> 통합 룰 안내
+            </h2>
+            <div id="noticeContainer" class="space-y-6 text-sm md:text-base text-white"></div>
+        </section>
+
+    </div>
+
+    <!-- 플로팅 카카오 버튼 -->
+    <div class="floating-kakao" onclick="window.open('https://open.kakao.com/o/sRTvKpih', '_blank')">
+        <div style="background-color: #FEE500; border-radius: 50%; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);">
+            <svg style="width: 30px; height: 30px;" viewBox="0 0 24 24" fill="#000000">
+                <path d="M12 2C6.48 2 2 5.52 2 9.87c0 2.5 1.48 4.74 3.78 6.07l-.92 3.35 3.37-1.87c.65.18 1.33.28 2.05.28 5.52 0 10-3.52 10-7.87C22 5.52 17.52 2 12 2z"/>
+            </svg>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, collection, doc, onSnapshot, query } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyB3Nks9ldQJ6er_-E_R_AKXkgPty-wg-s0",
+            authDomain: "partyguest-6bbb1.firebaseapp.com",
+            projectId: "partyguest-6bbb1",
+            storageBucket: "partyguest-6bbb1.firebasestorage.app",
+            messagingSenderId: "877721179337",
+            appId: "1:877721179337:web:de8b20a63e739b942d6918"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        let globalConfig = { guestTypes: [] };
+        let noticesData = {};
+        let partiesData = [];
+        let hasScrolled = false;
+
+        function toLocalISOString(date) {
+            let pad = n => (n < 10 ? '0' : '') + n;
+            return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+        }
+
+        const configRef = doc(db, "admin", "globalConfig");
+        onSnapshot(configRef, (snap) => {
+            if(snap.exists()) {
+                globalConfig = snap.data();
+                if(!globalConfig.guestTypes) globalConfig.guestTypes = [];
+                renderNotices();
+                renderCalendar();
+            }
+        });
+
+        const noticesRef = doc(db, "admin", "notices");
+        onSnapshot(noticesRef, (snap) => {
+            if(snap.exists()) {
+                noticesData = snap.data();
+                renderNotices();
+            }
+        });
+
+        function renderNotices() {
+            const container = document.getElementById('noticeContainer');
+            if(!container) return;
+            let html = '';
+            if(noticesData.partyDesc) {
+                html += `<div class="notice-box p-5 rounded-lg"><h3 class="text-white font-extrabold mb-3 text-lg">💠 파티 기본 설명</h3><p class="whitespace-pre-wrap leading-relaxed text-white">${noticesData.partyDesc}</p></div>`;
+            }
+            if(globalConfig.guestTypes) {
+                globalConfig.guestTypes.forEach(t => {
+                    if(noticesData[t.name]) {
+                        html += `
+                        <div class="border-l-4 pl-4 py-2" style="border-left-color: ${t.color}; color: ${t.color};">
+                            <h3 class="font-bold mb-1">▪ ${t.name}</h3>
+                            <p class="whitespace-pre-wrap text-gray-200">${noticesData[t.name]}</p>
+                        </div>`;
+                    }
+                });
+            }
+            container.innerHTML = html || '<p class="text-gray-400">등록된 공지사항이 없습니다.</p>';
+        }
+
+        onSnapshot(query(collection(db, "parties")), (snapshot) => {
+            partiesData = [];
+            snapshot.forEach(doc => { partiesData.push({ id: doc.id, ...doc.data() }); });
+            renderCalendar();
+        });
+
+        function getBaseThursday() {
+            let d = new Date(); d.setHours(0,0,0,0);
+            let day = d.getDay();
+            let diff = (day >= 4) ? (day - 4) : (day + 3);
+            d.setDate(d.getDate() - diff);
+            return d;
+        }
+
+        function renderCalendar() {
+            const grid = document.getElementById('calendarGrid');
+            grid.innerHTML = '';
+            const today = new Date(); today.setHours(0,0,0,0);
+            let startDate = getBaseThursday();
+            const days = ["일","월","화","수","목","금","토"];
+
+            for(let i = 0; i < 14; i++) {
+                let d = new Date(startDate);
+                d.setDate(startDate.getDate() + i);
+                let dateStr = toLocalISOString(d);
+                let isPast = d < today;
+                let todaysParties = partiesData.filter(p => p.date === dateStr).sort((a,b) => a.time.localeCompare(b.time));
+
+                let cell = document.createElement('div');
+                let dayColor = d.getDay() === 0 ? 'text-red-400' : d.getDay() === 6 ? 'text-blue-400' : 'text-white';
+                let visibilityClass = (todaysParties.length === 0) ? 'hidden md:flex' : 'flex';
+
+                cell.id = `date-${dateStr}`;
+                cell.className = `slot-cell p-3 rounded-2xl relative flex-col ${isPast ? 'past-date' : ''} ${visibilityClass}`;
+
+                let html = `<div class="flex justify-between items-center mb-3 border-b border-white/10 pb-2">
+                                <span class="font-extrabold text-lg ${dayColor}">${dateStr.slice(5)}(${days[d.getDay()]})</span>
+                            </div><div class="flex flex-col gap-2 flex-1">`;
+
+                todaysParties.forEach(p => {
+                    let openPositions = [];
+                    if (p.statuses && globalConfig.guestTypes) {
+                        globalConfig.guestTypes.forEach(t => {
+                            if (p.statuses[t.name] === true) {
+                                openPositions.push(`<div class="w-full text-sm font-bold px-2.5 py-1.5 rounded-md border text-center" style="color: ${t.color}; border-color: ${t.color}; background-color: rgba(255,255,255,0.05);">${t.name} 모집 중</div>`);
+                            }
+                        });
+                    }
+                    let displayHtml = openPositions.length > 0
+                        ? openPositions.join('')
+                        : `<div class="w-full text-sm font-bold text-red-400 px-2.5 py-1.5 rounded-md border border-red-500/50 text-center" style="background-color: rgba(239, 68, 68, 0.1);">마감</div>`;
+
+                    let actionClass = isPast ? 'bg-black/50 border-gray-800 opacity-60' : 'party-card-active';
+                    let actionClick = !isPast ? `onclick="window.open('https://open.kakao.com/o/sRTvKpih', '_blank')"` : '';
+
+                    html += `<div ${actionClick} class="p-3 rounded-xl ${actionClass} flex flex-col mt-1">
+                                <div class="text-white font-extrabold text-lg tracking-wide mb-0.5">${p.time}</div>
+                                <div class="text-sm text-gray-300 font-bold mb-3">${p.goal}</div>
+                                <div class="pt-3 border-t border-white/10 flex flex-col gap-1.5 w-full">
+                                    ${displayHtml}
+                                </div>
+                            </div>`;
+                });
+
+                if(todaysParties.length === 0 && !isPast) {
+                    html += `<div class="flex-1 flex items-center justify-center text-sm font-bold text-gray-600 py-4">일정 없음</div>`;
+                }
+
+                html += `</div>`;
+                cell.innerHTML = html;
+                grid.appendChild(cell);
+            }
+
+            if (!hasScrolled) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const targetDate = urlParams.get('date');
+                if (targetDate) {
+                    const targetEl = document.getElementById(`date-${targetDate}`);
+                    if (targetEl) {
+                        setTimeout(() => {
+                            targetEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                            targetEl.style.boxShadow = '0 0 30px rgba(201, 168, 76, 0.6)';
+                            targetEl.style.borderColor = '#C9A84C';
+                            setTimeout(() => {
+                                targetEl.style.boxShadow = 'none';
+                                targetEl.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                            }, 2000);
+                        }, 200);
+                    }
+                }
+                hasScrolled = true;
+            }
+        }
+    </script>
+
+</body>
+</html>
