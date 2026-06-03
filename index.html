@@ -303,7 +303,7 @@
 
                 let cell = document.createElement('div');
                 let dayColor = d.getDay() === 0 ? 'text-red-400' : d.getDay() === 6 ? 'text-blue-400' : 'text-white';
-                let visibilityClass = (todaysParties.length === 0) ? 'hidden md:flex' : 'flex';
+                let visibilityClass = isPast ? 'hidden' : (todaysParties.length === 0) ? 'hidden md:flex' : 'flex';
 
                 cell.id = `date-${dateStr}`;
                 cell.className = `slot-cell p-3 rounded-2xl relative flex-col ${isPast ? 'past-date' : ''} ${visibilityClass}`;
