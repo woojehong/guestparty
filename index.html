@@ -303,7 +303,7 @@
 
                 let cell = document.createElement('div');
                 let dayColor = d.getDay() === 0 ? 'text-red-400' : d.getDay() === 6 ? 'text-blue-400' : 'text-white';
-                let visibilityClass = isPast ? 'hidden' : (todaysParties.length === 0) ? 'hidden md:flex' : 'flex';
+                let visibilityClass = (todaysParties.length === 0) ? 'hidden md:flex' : 'flex';
 
                 cell.id = `date-${dateStr}`;
                 cell.className = `slot-cell p-3 rounded-2xl relative flex-col ${isPast ? 'past-date' : ''} ${visibilityClass}`;
@@ -312,33 +312,35 @@
                                 <span class="font-extrabold text-lg ${dayColor}">${dateStr.slice(5)}(${days[d.getDay()]})</span>
                             </div><div class="flex flex-col gap-2 flex-1">`;
 
-                todaysParties.forEach(p => {
-                    let openPositions = [];
-                    if (p.statuses && globalConfig.guestTypes) {
-                        globalConfig.guestTypes.forEach(t => {
-                            if (p.statuses[t.name] === true) {
-                                openPositions.push(`<div class="w-full text-sm font-bold px-2.5 py-1.5 rounded-md border text-center" style="color: ${t.color}; border-color: ${t.color}; background-color: rgba(255,255,255,0.05);">${t.name} 모집 중</div>`);
-                            }
-                        });
+                if (!isPast) {
+                    todaysParties.forEach(p => {
+                        let openPositions = [];
+                        if (p.statuses && globalConfig.guestTypes) {
+                            globalConfig.guestTypes.forEach(t => {
+                                if (p.statuses[t.name] === true) {
+                                    openPositions.push(`<div class="w-full text-sm font-bold px-2.5 py-1.5 rounded-md border text-center" style="color: ${t.color}; border-color: ${t.color}; background-color: rgba(255,255,255,0.05);">${t.name} 모집 중</div>`);
+                                }
+                            });
+                        }
+                        let displayHtml = openPositions.length > 0
+                            ? openPositions.join('')
+                            : `<div class="w-full text-sm font-bold text-red-400 px-2.5 py-1.5 rounded-md border border-red-500/50 text-center" style="background-color: rgba(239, 68, 68, 0.1);">마감</div>`;
+
+                        let actionClass = 'party-card-active';
+                        let actionClick = `onclick="window.open('https://open.kakao.com/o/sRTvKpih', '_blank')"`;
+
+                        html += `<div ${actionClick} class="p-3 rounded-xl ${actionClass} flex flex-col mt-1">
+                                    <div class="text-white font-extrabold text-lg tracking-wide mb-0.5">${p.time}</div>
+                                    <div class="text-sm text-gray-300 font-bold mb-3">${p.goal}</div>
+                                    <div class="pt-3 border-t border-white/10 flex flex-col gap-1.5 w-full">
+                                        ${displayHtml}
+                                    </div>
+                                </div>`;
+                    });
+
+                    if(todaysParties.length === 0) {
+                        html += `<div class="flex-1 flex items-center justify-center text-sm font-bold text-gray-600 py-4">일정 없음</div>`;
                     }
-                    let displayHtml = openPositions.length > 0
-                        ? openPositions.join('')
-                        : `<div class="w-full text-sm font-bold text-red-400 px-2.5 py-1.5 rounded-md border border-red-500/50 text-center" style="background-color: rgba(239, 68, 68, 0.1);">마감</div>`;
-
-                    let actionClass = isPast ? 'bg-black/50 border-gray-800 opacity-60' : 'party-card-active';
-                    let actionClick = !isPast ? `onclick="window.open('https://open.kakao.com/o/sRTvKpih', '_blank')"` : '';
-
-                    html += `<div ${actionClick} class="p-3 rounded-xl ${actionClass} flex flex-col mt-1">
-                                <div class="text-white font-extrabold text-lg tracking-wide mb-0.5">${p.time}</div>
-                                <div class="text-sm text-gray-300 font-bold mb-3">${p.goal}</div>
-                                <div class="pt-3 border-t border-white/10 flex flex-col gap-1.5 w-full">
-                                    ${displayHtml}
-                                </div>
-                            </div>`;
-                });
-
-                if(todaysParties.length === 0 && !isPast) {
-                    html += `<div class="flex-1 flex items-center justify-center text-sm font-bold text-gray-600 py-4">일정 없음</div>`;
                 }
 
                 html += `</div>`;
